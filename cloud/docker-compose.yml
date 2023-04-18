@@ -45,14 +45,14 @@ services:
       # Define cloud handler http host.
       - "traefik.http.routers.cloud-http.rule=Host(`cloud.${DOCKER_BASE_URL}`)"
       # Define http middleware and redirection to https.
-      - "traefik.http.routers.cloud-http.middlewares=cloud-https"
-      - "traefik.http.middlewares.cloud-https.redirectscheme.scheme=https"
-      # Enable cloud handler entrypoint on https.
-      - "traefik.http.routers.cloud.entrypoints=websecure"
-      # Define cloud handler host.
-      - "traefik.http.routers._cloud.rule=Host(`cloud.${DOCKER_BASE_URL}`)"
-      # Instructs cloud that the current router is dedicated to HTTPS requests only.
-      - "traefik.http.routers._cloud.tls=true"
+      # - "traefik.http.routers.cloud-http.middlewares=cloud-https"
+      # - "traefik.http.middlewares.cloud-https.redirectscheme.scheme=https"
+      # # Enable cloud handler entrypoint on https.
+      # - "traefik.http.routers.cloud.entrypoints=websecure"
+      # # Define cloud handler host.
+      # - "traefik.http.routers._cloud.rule=Host(`cloud.${DOCKER_BASE_URL}`)"
+      # # Instructs cloud that the current router is dedicated to HTTPS requests only.
+      # - "traefik.http.routers._cloud.tls=true"
       # Define on which network Traefik is operating.
       - "traefik.docker.network=docker-home-net"
 

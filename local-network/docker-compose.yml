@@ -26,7 +26,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount the configuration file with the certificates list.
-      - ${USERHOME}/traefik.config.toml:/root/.config/ssl.toml
+      - ${USERHOME}/server/traefik/traefik.config.toml:/root/.config/ssl.toml
       # Mount the folder containing the certificates for https.
       - certs:/certs/
     labels:
@@ -47,6 +47,8 @@ services:
       - "traefik.http.routers.traefik.rule=Host(`${DOCKER_BASE_URL}`)"
       # Instructs Traefik that the current router is dedicated to HTTPS requests only.
       - "traefik.http.routers.traefik.tls=true"
+    extra_hosts:
+      - host.docker.internal:172.17.0.1
   whoami:
     image: containous/whoami
     container_name: "whoami"
