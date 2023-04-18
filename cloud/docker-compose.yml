@@ -1,0 +1,89 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb:10.6
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    restart: always
+    volumes:
+      - db:/var/lib/mysql:Z
+    environment:
+      - MYSQL_ROOT_PASSWORD=nextcloud
+      - MARIADB_AUTO_UPGRADE=1
+      - MARIADB_DISABLE_UPGRADE_BACKUP=1
+    env_file:
+      - db.env
+    networks:
+      - nextcloud
+
+  redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - nextcloud
+
+  app:
+    image: nextcloud:apache
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html:z
+      - photos:/mnt/photos:rw
+    environment:
+      - MYSQL_HOST=db
+      - REDIS_HOST=redis
+    env_file:
+      - db.env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nextcloud
+      - docker-home-net
+    labels:
+      # Enable cloud handler entrypoint on http.
+      - "traefik.http.routers.cloud-http.entrypoints=web"
+      # Define cloud handler http host.
+      - "traefik.http.routers.cloud-http.rule=Host(`cloud.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.cloud-http.middlewares=cloud-https"
+      - "traefik.http.middlewares.cloud-https.redirectscheme.scheme=https"
+      # Enable cloud handler entrypoint on https.
+      - "traefik.http.routers.cloud.entrypoints=websecure"
+      # Define cloud handler host.
+      - "traefik.http.routers._cloud.rule=Host(`cloud.${DOCKER_BASE_URL}`)"
+      # Instructs cloud that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers._cloud.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+
+  cron:
+    image: nextcloud:apache
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html:z
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nextcloud
+
+networks:
+  nextcloud:
+  docker-home-net:
+    external: true
+
+volumes:
+  db:
+  nextcloud:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${USERHOME}/server/nextcloud/config/
+  photos:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${USERHOME}/photos/
