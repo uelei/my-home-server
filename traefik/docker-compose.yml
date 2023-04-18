@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v2.9
+    # container_name: "traefik"
+    container_name: "traefik"
+    command:
+      - --providers.docker=true
+      # Enable the API handler in insecure mode,
+      # which means that the Traefik API will be available directly
+      # on the entry point named traefik.
+      - --api.insecure=true
+      # Defines the path to the configuration file with the certificates list.
+      - "--providers.file.filename=/etc/traefik/traefik.config.toml"
+      # - --providers.file.filename=/root/.config/ssl.toml
+      # Define Traefik entry points to port [80] for http and port [443] for https.
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    networks:
+      # Define the network on which traefik is going to operate.
+      - docker-home-net
+    ports:
+      # Open traefik http [80] and https [443] ports.
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount the configuration file with the certificates list.
+      - ./traefik.config.toml:/root/.config/ssl.toml
+      # Mount the folder containing the certificates for https.
+      - ./certs/:/certs/
+    labels:
+      - "traefik.enable=true"
+      # Enable Traefik API handler entrypoint on http.
+      - "traefik.http.routers.traefik-http.entrypoints=web"
+      # Define Traefik API handler http host.
+      - "traefik.http.routers.traefik-http.rule=Host(`${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.traefik-http.middlewares=traefik-https"
+      - "traefik.http.middlewares.traefik-https.redirectscheme.scheme=https"
+      # Enable Traefik API handler entrypoint on https.
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      # By default the Traefik API handler operates on the port [8080].
+      # Define a load balancer to route the entry point to [8080].
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      # Define Traefik API handler host.
+      - "traefik.http.routers.traefik.rule=Host(`${DOCKER_BASE_URL}`)"
+      # Instructs Traefik that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.traefik.tls=true"
+  whoami:
+    image: containous/whoami
+    container_name: "whoami"
+    networks:
+      - docker-home-net
+    labels:
+      # Enable Whoami handler entrypoint on http.
+      - "traefik.http.routers.whoami-http.entrypoints=web"
+      # Define Whoami handler http host.
+      - "traefik.http.routers.whoami-http.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.whoami-http.middlewares=whoami-https"
+      - "traefik.http.middlewares.whoami-https.redirectscheme.scheme=https"
+      # Enable Whoami handler entrypoint on https.
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      # Define Whoami handler host.
+      - "traefik.http.routers._whoami.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
+      # Instructs Whoami that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers._whoami.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+
+networks:
+  docker-home-net:
+    external: true

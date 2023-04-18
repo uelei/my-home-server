@@ -1,0 +1,7 @@
+[tls.stores]
+  [tls.stores.default]
+    [tls.stores.default.defaultCertificate]
+    certFile = "/etc/certs/default.crt"
+    keyFile = "/etc/certs/default.key"
+    # certFile = "/certs/cert.pem"
+    # keyFile = "/certs/key.pem"

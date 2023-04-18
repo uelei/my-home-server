@@ -1,0 +1,58 @@
+---
+version: "3.1"
+services:
+# PIHOLE 
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    # For DHCP it is recommended to remove these ports and instead add: network_mode: "host"
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      # - "67:67/udp" # Only required if you are using Pi-hole as your DHCP server
+      # - "8888:80/tcp" handle on traefik
+    environment:
+      - TZ=${TIMEZONE}
+      - WEBPASSWORD=${WEBPASSWORD}
+      # WEBPASSWORD: 'set a secure password here or it will be random'
+    # Volumes store your data between container upgrades
+    volumes:
+      - ${USERHOME}/server/pihole/etc-pihole:/etc/pihole
+      - ${USERHOME}/server/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    # cap_add:
+    #   - NET_ADMIN # Recommended but not required (DHCP needs NET_ADMIN)
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable pihole handler entrypoint on http.
+      - "traefik.http.routers.pihole-http.entrypoints=web"
+      # Define pihole handler http host.
+      - "traefik.http.routers.pihole-http.rule=Host(`pihole.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.pihole-http.middlewares=pihole-https"
+      - "traefik.http.middlewares.pihole-https.redirectscheme.scheme=https"
+      # Enable pihole handler entrypoint on https.
+      - "traefik.http.routers.pihole.entrypoints=websecure"
+      # Define pihole handler host.
+      - "traefik.http.routers._pihole.rule=Host(`pihole.${DOCKER_BASE_URL}`)"
+      # Instructs pihole that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers._pihole.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
+      # pihole labels for traefik
+      - "traefik.http.routers.pihole.middlewares=pihole-prefix"
+      - "traefik.http.middlewares.pihole-prefix.addPrefix.prefix=/admin"
+      # add tcp services
+      - "traefik.tcp.routers.dnstcp.entrypoints=dnstcp"
+      - "traefik.tcp.routers.dnstcp.rule=HostSNI(`*`)"
+      - "traefik.tcp.services.pihole.loadbalancer.server.port=53"
+
+      - "traefik.udp.routers.dnsudp.entrypoints=dnsudp"
+      - "traefik.udp.services.pihole.loadbalancer.server.port=53"
+
+networks:
+  docker-home-net:
+    external: true
