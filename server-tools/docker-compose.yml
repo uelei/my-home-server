@@ -1,0 +1,75 @@
+
+---
+version: "3.1"
+services:
+  # # ----------------------------------------
+  # time machine
+  # ----------------------------------------
+  # timemachine:
+  #     image: odarriba/timemachine
+  #     container_name: timemachine
+  #     restart: unless-stopped
+  #     volumes:
+  #         - /path/to/timemachine:/timemachine
+  #     ports:
+  #         - 548:548
+  #         - 636:636
+  #     environment:
+  #         - AFP_SIZE_LIMIT=250000
+  #         - AFP_NAME=Backups
+  # ----------------------------------------
+  #  cups
+  # ----------------------------------------
+  # cups:
+  #     image: olbat/cupsd
+  #     container_name: cuds
+  #     restart: unless-stopped
+  #     network_mode: host
+  #     privileged: true
+  #     environment:
+  #       - CUPS_DEBUG=1
+  #       - CUPS_PASSWORD=print
+  #     volumes:
+  #       - /var/run/dbus:/var/run/dbus
+  #       - /dev/bus/usb:/dev/bus/usb
+  #     ports:
+  #         - 631:631
+  # ----------------------------------------
+  #  calibre web
+  # ----------------------------------------
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:latest
+    container_name: calibre-web
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TIMEZONE}
+      - DOCKER_MODS=linuxserver/mods:universal-calibre #optional
+      - OAUTHLIB_RELAX_TOKEN_SCOPE=1 #optional
+    volumes:
+      - ${USERHOME}/server/calibre-config:/config
+      - ${USERHOME}/storage:/storage
+    # ports:
+    #   - 8083:8083
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.calibre-http.rule=Host(`book.${DOCKER_BASE_URL}`)"
+      - "traefik.http.routers.calibre.entrypoints=websecure"
+      - "traefik.http.services.calibre.loadbalancer.server.port=8083"
+      - "traefik.http.routers.calibre.service=calibre"
+      - "traefik.http.routers.calibre.tls.certresolver=leresolver"
+
+  # homer:
+  #   image: b4bz/homer:latest
+  #   # ports:
+  #   #   - 8088:8080
+  #   volumes:
+  #     - ./docker/homer:/www/assets
+  #   restart: unless-stopped
+  #   user: 1000:1000 # default
+  #   environment:
+  #     - INIT_ASSETS=1 # default
+  #   networks:
+  #     - npm-nw
+

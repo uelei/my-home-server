@@ -1,0 +1,393 @@
+
+version: '3'
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host
+    environment:
+      - PUID=${UID}
+      - PGID=13000
+      - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM}
+    volumes:
+      - ${USERHOME}/server/plex-config:/config
+      - ${USERHOME}/storage:/storage
+    restart: unless-stopped
+    # networks:
+    #   - docker-home-net
+    ports:
+     - 32400:32400/tcp
+     - 32400:32400/udp
+     - 3005:3005/tcp
+     - 8324:8324/tcp
+     - 32469:32469/tcp
+     - 1900:1900/udp
+     - 32410:32410/udp
+     - 32412:32412/udp
+     - 32413:32413/udp
+     - 32414:32414/udp
+    labels:
+      # Enable plex handler entrypoint on http.
+      - "traefik.http.routers.plex-http.entrypoints=web"
+      # Define plex handler http host.
+      - "traefik.http.routers.plex-http.rule=Host(`plex.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.plex-http.middlewares=plex-https"
+      - "traefik.http.middlewares.plex-https.redirectscheme.scheme=https"
+      # Enable plex handler entrypoint on https.
+      - "traefik.http.routers.plex.entrypoints=websecure"
+      # Define plex handler host.
+      - "traefik.http.routers.plex.rule=Host(`plex.${DOCKER_BASE_URL}`)"
+      # Instructs plex that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.plex.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.plex.loadbalancer.server.port=32400"
+#
+  # tautulli:
+  #   image: lscr.io/linuxserver/tautulli:latest
+  #   container_name: tautulli
+  #   depends_on:
+  #     - plex
+  #   environment:
+  #     - PUID=${UID}
+  #     - PGID=13000
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - ./docker/tautulli-config:/config
+  #   ports:
+  #     - 8181:8181
+  #   restart: unless-stopped
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=${UID}
+      - PGID=13000
+      - UMASK=002
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/jellyfin-config:/config
+      - ${USERHOME}/storage:/storage
+      # - drobo:/mnt/drobo
+    restart: unless-stopped
+    ports:
+      - 8096:8096
+    networks:
+      - docker-home-net
+    labels:
+      # Enable jelly handler entrypoint on http.
+      - "traefik.http.routers.jelly-http.entrypoints=web"
+      # Define jelly handler http host.
+      - "traefik.http.routers.jelly-http.rule=Host(`jelly.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.jelly-http.middlewares=jelly-https"
+      - "traefik.http.middlewares.jelly-https.redirectscheme.scheme=https"
+      # Enable jelly handler entrypoint on https.
+      - "traefik.http.routers.jelly.entrypoints=websecure"
+      # Define jelly handler host.
+      - "traefik.http.routers.jelly.rule=Host(`jelly.${DOCKER_BASE_URL}`)"
+      # Instructs jelly that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.jelly.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.jelly.loadbalancer.server.port=8096"
+#
+# SERVARR
+#
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - UMASK=002
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/radarr-config:/config
+      - ${USERHOME}/storage:/storage
+    # ports:
+    #   - 7878:7878
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable radarr handler entrypoint on http.
+      - "traefik.http.routers.radarr-http.entrypoints=web"
+      # Define radarr handler http host.
+      - "traefik.http.routers.radarr-http.rule=Host(`movie.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.radarr-http.middlewares=radarr-https"
+      - "traefik.http.middlewares.radarr-https.redirectscheme.scheme=https"
+      # Enable radarr handler entrypoint on https.
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      # Define radarr handler host.
+      - "traefik.http.routers.radarr.rule=Host(`movie.${DOCKER_BASE_URL}`)"
+      # Instructs radarr that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.radarr.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - UMASK=002
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/sonarr-config:/config
+      - ${USERHOME}/storage:/storage
+    # ports:
+    #   - 8989:8989
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable jelly handler entrypoint on http.
+      - "traefik.http.routers.sonarr-http.entrypoints=web"
+      # Define jelly handler http host.
+      - "traefik.http.routers.sonarr-http.rule=Host(`tvshow.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.sonarr-http.middlewares=sonarr-https"
+      - "traefik.http.middlewares.sonarr-https.redirectscheme.scheme=https"
+      # Enable jelly handler entrypoint on https.
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      # Define jelly handler host.
+      - "traefik.http.routers.sonarr.rule=Host(`tvshow.${DOCKER_BASE_URL}`)"
+      # Instructs jelly that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.sonarr.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${UID}
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/bazarr-config:/config
+      - ${USERHOME}/storage:/storage
+    # ports:
+    #   - 6767:6767
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable bazarr handler entrypoint on http.
+      - "traefik.http.routers.bazarr-http.entrypoints=web"
+      # Define bazarr handler http host.
+      - "traefik.http.routers.bazarr-http.rule=Host(`sub.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.bazarr-http.middlewares=bazarr-https"
+      - "traefik.http.middlewares.bazarr-https.redirectscheme.scheme=https"
+      # Enable bazarr handler entrypoint on https.
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      # Define bazarr handler host.
+      - "traefik.http.routers.bazarr.rule=Host(`sub.${DOCKER_BASE_URL}`)"
+      # Instructs bazarr that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.bazarr.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - UMASK=002
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/lidarr-config:/config
+      - ${USERHOME}/storage:/storage
+    # ports:
+    #   - 8686:8686
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable lidarr handler entrypoint on http.
+      - "traefik.http.routers.lidarr-http.entrypoints=web"
+      # Define lidarr handler http host.
+      - "traefik.http.routers.lidarr-http.rule=Host(`music.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.lidarr-http.middlewares=lidarr-https"
+      - "traefik.http.middlewares.lidarr-https.redirectscheme.scheme=https"
+      # Enable lidarr handler entrypoint on https.
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      # Define lidarr handler host.
+      - "traefik.http.routers.lidarr.rule=Host(`music.${DOCKER_BASE_URL}`)"
+      # Instructs lidarr that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.lidarr.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
+
+  # readarr:
+  #   image: lscr.io/linuxserver/readarr:develop
+  #   container_name: readarr
+  #   environment:
+  #     - PUID=13004
+  #     - PGID=13000
+  #     - UMASK=002
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - ./docker/readarr-config:/config
+  #     - ./data:/data
+  #   ports:
+  #     - 8787:8787
+  #   restart: unless-stopped
+
+  # # mylar3: commic book
+  # #  image: lscr.io/linuxserver/mylar3:latest
+  # #  container_name: mylar3
+  # #  environment:
+  # #    - PUID=13005
+  # #    - PGID=13000
+  # #    - UMASK=002
+  # #  volumes:
+  # #    - ./docker/mylar-config:/config
+  # #    - ./data:/data
+  # #  ports:
+  # #    - 8090:8090
+  # #  restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=13006
+      - PGID=13000
+      - UMASK=002
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${USERHOME}/server/prowlarr-config:/config
+    # ports:
+    #   - 9696:9696
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    labels:
+      # Enable jelly handler entrypoint on http.
+      - "traefik.http.routers.prowlarr-http.entrypoints=web"
+      # Define jelly handler http host.
+      - "traefik.http.routers.prowlarr-http.rule=Host(`prowlarr.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.prowlarr-http.middlewares=prowlarr-https"
+      - "traefik.http.middlewares.prowlarr-https.redirectscheme.scheme=https"
+      # Enable jelly handler entrypoint on https.
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      # Define jelly handler host.
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOCKER_BASE_URL}`)"
+      # Instructs jelly that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.prowlarr.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+  # flaresolverr:
+  #   # DockerHub mirror flaresolverr/flaresolverr:latest
+  #   image: ghcr.io/flaresolverr/flaresolverr:latest
+  #   container_name: flaresolverr
+  #   networks:
+  #     - docker-home-net
+  #   environment:
+  #     - LOG_LEVEL=${LOG_LEVEL:-info}
+  #     - LOG_HTML=${LOG_HTML:-false}
+  #     - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+  #     - TZ=${TIMEZONE}
+  #   # ports:
+  #   #   - "${PORT:-8191}:8191"
+  #   restart: unless-stopped
+
+  # jackett:
+  #   image: lscr.io/linuxserver/jackett:latest
+  #   container_name: jackett
+  #   environment:
+  #     - PUID=13008
+  #     - PGID=13000
+  #     - UMASK=002
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - ${USERHOME}/server/jackett-config:/config
+  #     - ./docker/jackett-config:/config
+  #   # ports:
+  #   #   - 9117:9117
+  #   restart: unless-stopped
+  #   networks:
+  #     - docker-home-net
+  #   labels:
+  #     # Enable jelly handler entrypoint on http.
+  #     - "traefik.http.routers.jackett-http.entrypoints=web"
+  #     # Define jelly handler http host.
+  #     - "traefik.http.routers.jackett-http.rule=Host(`jackett.${DOCKER_BASE_URL}`)"
+  #     # Define http middleware and redirection to https.
+  #     - "traefik.http.routers.jackett-http.middlewares=jackett-https"
+  #     - "traefik.http.middlewares.jackett-https.redirectscheme.scheme=https"
+  #     # Enable jelly handler entrypoint on https.
+  #     - "traefik.http.routers.jackett.entrypoints=websecure"
+  #     # Define jelly handler host.
+  #     - "traefik.http.routers.jackett.rule=Host(`jackett.${DOCKER_BASE_URL}`)"
+  #     # Instructs jelly that the current router is dedicated to HTTPS requests only.
+  #     - "traefik.http.routers.jackett.tls=true"
+  #     # Define on which network Traefik is operating.
+  #     # - "traefik.docker.network=docker-home-net"
+  #     - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=${TIMEZONE}
+      - WEBUI_PORT=8080
+    volumes:
+      - ${USERHOME}/server/qbittorrent-config:/config
+      - ${USERHOME}/storage:/storage
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+    labels:
+       - "traefik.enable=false"
+  # # transmission-openvpn:
+  # #     cap_add:
+  # #         - NET_ADMIN
+  # #     volumes:
+  # #         - '.docker/transmission-openvpn-config:/config' # Change this to your docker config folder
+  # #         - '/data/torrents:/data'
+  # #         - './trans-tor.ovpn:/etc/openvpn/custom/default.ovpn'
+  # #
+  # #     environment:
+  # #         - OPENVPN_PROVIDER=custom
+  # #         - OPENVPN_USERNAME=uelei  
+  # #         - OPENVPN_PASSWORD=pass
+  # #         - LOCAL_NETWORK=192.168.1.0/16
+  # #     logging:
+  # #         driver: json-file
+  # #         options:
+  # #             max-size: 10m
+  # #     ports:
+  # #         - '9091:9091'
+  # #     image: haugene/transmission-openvpn
+
+networks:
+  docker-home-net:
+    external: true
+
+# volumes:
+#   drobo:
+#     driver: local
+#     driver_opts:
+#       type: nfs
+#       o: addr=192.168.1.50,rw
+#       device: ":/mnt/DroboFS/Shares/Public"
+

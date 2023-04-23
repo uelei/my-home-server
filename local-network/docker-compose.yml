@@ -49,27 +49,27 @@ services:
       - "traefik.http.routers.traefik.tls=true"
     extra_hosts:
       - host.docker.internal:172.17.0.1
-  whoami:
-    image: containous/whoami
-    container_name: "whoami"
-    networks:
-      - docker-home-net
-    labels:
-      # Enable Whoami handler entrypoint on http.
-      - "traefik.http.routers.whoami-http.entrypoints=web"
-      # Define Whoami handler http host.
-      - "traefik.http.routers.whoami-http.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
-      # Define http middleware and redirection to https.
-      - "traefik.http.routers.whoami-http.middlewares=whoami-https"
-      - "traefik.http.middlewares.whoami-https.redirectscheme.scheme=https"
-      # Enable Whoami handler entrypoint on https.
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      # Define Whoami handler host.
-      - "traefik.http.routers._whoami.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
-      # Instructs Whoami that the current router is dedicated to HTTPS requests only.
-      - "traefik.http.routers._whoami.tls=true"
-      # Define on which network Traefik is operating.
-      - "traefik.docker.network=docker-home-net"
+  # whoami:
+  #   image: containous/whoami
+  #   container_name: "whoami"
+  #   networks:
+  #     - docker-home-net
+  #   labels:
+  #     # Enable Whoami handler entrypoint on http.
+  #     - "traefik.http.routers.whoami-http.entrypoints=web"
+  #     # Define Whoami handler http host.
+  #     - "traefik.http.routers.whoami-http.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
+  #     # Define http middleware and redirection to https.
+  #     - "traefik.http.routers.whoami-http.middlewares=whoami-https"
+  #     - "traefik.http.middlewares.whoami-https.redirectscheme.scheme=https"
+  #     # Enable Whoami handler entrypoint on https.
+  #     - "traefik.http.routers.whoami.entrypoints=websecure"
+  #     # Define Whoami handler host.
+  #     - "traefik.http.routers._whoami.rule=Host(`whoami.${DOCKER_BASE_URL}`)"
+  #     # Instructs Whoami that the current router is dedicated to HTTPS requests only.
+  #     - "traefik.http.routers._whoami.tls=true"
+  #     # Define on which network Traefik is operating.
+  #     - "traefik.docker.network=docker-home-net"
 
   omgwtfssl:
     image: paulczar/omgwtfssl
@@ -91,8 +91,8 @@ services:
     image: pihole/pihole:latest
     # For DHCP it is recommended to remove these ports and instead add: network_mode: "host"
     ports:
-      - "53:53/tcp"
-      - "53:53/udp"
+      - 192.168.1.10:53:53/tcp
+      - 192.168.1.10:53:53/udp
       # - "67:67/udp" # Only required if you are using Pi-hole as your DHCP server
       # - "8888:80/tcp" handle on traefik
     environment:
@@ -137,6 +137,19 @@ services:
       - "traefik.udp.routers.dnsudp.entrypoints=dnsudp"
       - "traefik.udp.services.pihole.loadbalancer.server.port=53"
 
+
+  zerotier:
+    image: zerotier/zerotier:latest
+    restart: unless-stopped
+    devices:
+      - /dev/net/tun
+    network_mode: host
+    volumes:
+      - '/var/lib/zerotier-one:/var/lib/zerotier-one'
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
 networks:
   docker-home-net:
     external: true
@@ -148,3 +161,10 @@ volumes:
       o: bind
       type: none
       device: ${USERHOME}/server/traefik/certs/
+
+  # drobo:
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: addr=192.168.1.50,rw
+  #     device: ":/mnt/DroboFS/Shares/Public"

@@ -31,8 +31,17 @@ services:
       # Instructs home-assistant that the current router is dedicated to HTTPS requests only.
       - "traefik.http.routers._home-assistant.tls=true"
       # Define on which network Traefik is operating.
-      - "traefik.docker.network=docker-home-net"
+      # - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
-networks:
-  docker-home-net:
-    external: true
+  # nodered:
+  #   container_name: nodered
+  #   image: nodered/node-red
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1880:1880/tcp"
+  #   environment:
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - ./docker/node_red:/data
+  #   depends_on:
+  #     - homeassistant
