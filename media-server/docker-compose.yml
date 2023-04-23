@@ -9,24 +9,23 @@ services:
       - PUID=${UID}
       - PGID=13000
       - VERSION=docker
-      - PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - ${USERHOME}/server/plex-config:/config
       - ${USERHOME}/storage:/storage
     restart: unless-stopped
     # networks:
     #   - docker-home-net
-    ports:
-     - 32400:32400/tcp
-     - 32400:32400/udp
-     - 3005:3005/tcp
-     - 8324:8324/tcp
-     - 32469:32469/tcp
-     - 1900:1900/udp
-     - 32410:32410/udp
-     - 32412:32412/udp
-     - 32413:32413/udp
-     - 32414:32414/udp
+    # ports:
+    #  - 32400:32400/tcp
+    #  - 32400:32400/udp
+    #  - 3005:3005/tcp
+    #  - 8324:8324/tcp
+    #  - 32469:32469/tcp
+    #  - 1900:1900/udp
+    #  - 32410:32410/udp
+    #  - 32412:32412/udp
+    #  - 32413:32413/udp
+    #  - 32414:32414/udp
     labels:
       # Enable plex handler entrypoint on http.
       - "traefik.http.routers.plex-http.entrypoints=web"
@@ -210,8 +209,8 @@ services:
     # ports:
     #   - 8686:8686
     restart: unless-stopped
-    networks:
-      - docker-home-net
+    # networks:
+    #   - docker-home-net
     labels:
       # Enable lidarr handler entrypoint on http.
       - "traefik.http.routers.lidarr-http.entrypoints=web"
@@ -227,7 +226,7 @@ services:
       # Instructs lidarr that the current router is dedicated to HTTPS requests only.
       - "traefik.http.routers.lidarr.tls=true"
       # Define on which network Traefik is operating.
-      - "traefik.docker.network=docker-home-net"
+      # - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   # readarr:
