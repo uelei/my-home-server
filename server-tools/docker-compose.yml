@@ -1,4 +1,3 @@
-
 ---
 version: "3.1"
 services:
@@ -49,17 +48,27 @@ services:
     volumes:
       - ${USERHOME}/server/calibre-config:/config
       - ${USERHOME}/storage:/storage
-    # ports:
-    #   - 8083:8083
+    ports:
+      - 8083:8083
     restart: unless-stopped
     labels:
-      - "traefik.enable=true"
+      # Enable calibre handler entrypoint on http.
+      - "traefik.http.routers.calibre-http.entrypoints=web"
+      # Define calibre handler http host.
       - "traefik.http.routers.calibre-http.rule=Host(`book.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.calibre-http.middlewares=calibre-https"
+      - "traefik.http.middlewares.calibre-https.redirectscheme.scheme=https"
+      # Enable calibre handler entrypoint on https.
       - "traefik.http.routers.calibre.entrypoints=websecure"
+      # Define calibre handler host.
+      - "traefik.http.routers.calibre.rule=Host(`book.${DOCKER_BASE_URL}`)"
+      # Instructs calibre that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.calibre.tls=true"
+      # Define on which network Traefik is operating.
+      # - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.calibre.loadbalancer.server.port=8083"
-      - "traefik.http.routers.calibre.service=calibre"
-      - "traefik.http.routers.calibre.tls.certresolver=leresolver"
-
+      # - "traefik.http.services.calibre-web.loadbalancer.server.scheme=http"
   # homer:
   #   image: b4bz/homer:latest
   #   # ports:
@@ -72,4 +81,46 @@ services:
   #     - INIT_ASSETS=1 # default
   #   networks:
   #     - npm-nw
+  portainer:
+    image: portainer/portainer-ee:latest
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    labels:
+      # Frontend
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.frontend-http.rule=Host(`docker.${DOCKER_BASE_URL}`)"
+      # - "traefik.http.routers.frontend.entrypoints=websecure"
+      # - "traefik.http.services.frontend.loadbalancer.server.port=9000"
+      # - "traefik.http.routers.frontend.service=frontend"
+      # - "traefik.http.routers.frontend.tls.certresolver=leresolver"
+      # # Edge
+      # - "traefik.http.routers.edge.rule=Host(`edge.yourdomain.com`)"
+      # - "traefik.http.routers.edge.entrypoints=websecure"
+      # - "traefik.http.services.edge.loadbalancer.server.port=8000"
+      # - "traefik.http.routers.edge.service=edge"
+      # - "traefik.http.routers.edge.tls.certresolver=leresolver"
+      #
+      # Enable portainer handler entrypoint on http.
+      - "traefik.http.routers.portainer-http.entrypoints=web"
+      # Define portainer handler http host.
+      - "traefik.http.routers.portainer-http.rule=Host(`docker.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.portainer-http.middlewares=portainer-https"
+      - "traefik.http.middlewares.portainer-https.redirectscheme.scheme=https"
+      # Enable portainer handler entrypoint on https.
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      # Define portainer handler host.
+      - "traefik.http.routers._portainer.rule=Host(`docker.${DOCKER_BASE_URL}`)"
+      # Instructs portainer that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers._portainer.tls=true"
+      # Define on which network Traefik is operating.
+      # - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
+volumes:
+  portainer-data:

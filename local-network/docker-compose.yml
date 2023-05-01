@@ -34,7 +34,7 @@ services:
       # Enable Traefik API handler entrypoint on http.
       - "traefik.http.routers.traefik-http.entrypoints=web"
       # Define Traefik API handler http host.
-      - "traefik.http.routers.traefik-http.rule=Host(`${DOCKER_BASE_URL}`)"
+      - "traefik.http.routers.traefik-http.rule=Host(`router.${DOCKER_BASE_URL}`)"
       # Define http middleware and redirection to https.
       - "traefik.http.routers.traefik-http.middlewares=traefik-https"
       - "traefik.http.middlewares.traefik-https.redirectscheme.scheme=https"
