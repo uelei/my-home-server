@@ -22,8 +22,8 @@ jobs:
       - name: Run setup.sh
         run: ./setup.sh
 
-      - name: create volume foders
-        run: mkdir -p /server/nextcloud/config/ /photos
+      # - name: create volume foders
+      #   run: mkdir -p /server/nextcloud/config/ /photos
 
       - name: Create the network
         run: docker network create docker-home-net
