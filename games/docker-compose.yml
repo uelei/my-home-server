@@ -1,0 +1,46 @@
+version: '3.4'
+
+services:
+  # minecraft:
+  #   image: itzg/minecraft-bedrock-server
+  #   environment:
+  #     EULA: "TRUE"
+  #     GAMEMODE: survival
+  #     DIFFICULTY: normal
+  #     LEVEL_SEED: -1251937210
+  #     ONLINE_MODE: false
+  #   labels:
+  #     - "traefik.enable=false"
+  #   ports:
+  #     - 19132:19132/udp
+  #   volumes:
+  #     - ${USERHOME}/server/minecraft-bedrock:/data
+  #   stdin_open: true
+  #   tty: true
+
+  minecraft-cross:
+    image: 05jchambers/legendary-minecraft-geyser-floodgate:latest
+    environment:
+      TZ: ${TIMEZONE}
+      EULA: "TRUE"
+      GAMEMODE: survival
+      DIFFICULTY: normal
+      # LEVEL_SEED: -1251937210
+      # ONLINE_MODE: false
+    labels:
+      - "traefik.enable=false"
+    ports:
+      - 25565:25565
+      - 19132:19132/udp
+      - 19132:19132
+    volumes:
+      - ${USERHOME}/server/minecraft-cross:/minecraft
+    restart: unless-stopped
+    networks:
+      - docker-home-net
+    stdin_open: true
+    tty: true
+
+networks:
+  docker-home-net:
+    external: true
