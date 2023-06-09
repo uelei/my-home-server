@@ -27,7 +27,8 @@ services:
     restart: always
     volumes:
       - nextcloud:/var/www/html:z
-      - photos:/mnt/photos:rw
+      - ${USERHOME}/photos:/mnt/photos:z
+      - ${USERHOME}/storage:/storage:rw
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
@@ -67,6 +68,75 @@ services:
       - redis
     networks:
       - nextcloud
+
+  duplicati:
+    image: lscr.io/linuxserver/duplicati:latest
+    container_name: duplicati
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - CLI_ARGS= #optional
+    volumes:
+      - ${USERHOME}/server/duplicati/:/config
+      - ${USERHOME}/storage:/storage:z
+      - ${USERHOME}/files:/files:z
+      - ${USERHOME}/server:/server
+    # ports:
+    #   - 8200:8200
+    networks:
+      - docker-home-net
+    restart: unless-stopped
+    labels:
+      # Enable duplicati handler entrypoint on http.
+      - "traefik.http.routers.duplicati-http.entrypoints=web"
+      # Define duplicati handler http host.
+      - "traefik.http.routers.duplicati-http.rule=Host(`bak.${DOCKER_BASE_URL}`)"
+      # Define http middleware and redirection to https.
+      - "traefik.http.routers.duplicati-http.middlewares=duplicati-https"
+      - "traefik.http.middlewares.duplicati-https.redirectscheme.scheme=https"
+      # Enable duplicati handler entrypoint on https.
+      - "traefik.http.routers.duplicati.entrypoints=websecure"
+      # Define duplicati handler host.
+      - "traefik.http.routers.duplicati.rule=Host(`bak.${DOCKER_BASE_URL}`)"
+      # Instructs duplicati that the current router is dedicated to HTTPS requests only.
+      - "traefik.http.routers.duplicati.tls=true"
+      # Define on which network Traefik is operating.
+      - "traefik.docker.network=docker-home-net"
+      - "traefik.http.services.duplicati.loadbalancer.server.port=8200"
+
+  samba:
+    image: crazymax/samba
+    network_mode: host
+    volumes:
+      - ${USERHOME}/server/samba/:/data
+      - ${USERHOME}/files:/samba/files
+      - ${USERHOME}/box:/samba/box
+      - ${USERHOME}/storage/public:/samba/public
+    environment:
+      - TZ=${TIMEZONE}
+      - SAMBA_LOG_LEVEL=0
+      - BROWSABLE=yes
+    restart: unless-stopped
+    labels:
+       - "traefik.enable=false"
+
+  rclone_rclone:
+    image: rclone/rclone
+    container_name: rclone_rclone
+    network_mode: host
+    restart: always
+    command: rcd --rc-web-gui --rc-addr :5572 --rc-user uelei --rc-pass ${WEBPASSWORD}
+    # ports:
+    #   - "5572:5572"
+    volumes:
+      - ${USERHOME}/server/rclone/:/config/rclone
+      - ${USERHOME}/files:/data/files:z
+      - ${USERHOME}/box:/data/box:z
+    environment:
+      - PHP_TZ=${TIMEZONE}
+      - PUID=1000
+      - PGID=1000
 
 networks:
   nextcloud:

@@ -1,5 +1,3 @@
-
-
 # My Home server setup 
 
 
@@ -13,5 +11,3 @@ docker network create docker-home-net
 - for each service start docker-compose 
 
 
-
-      - "traefik.http.services.home-assistant.loadbalancer.server.port=8123"

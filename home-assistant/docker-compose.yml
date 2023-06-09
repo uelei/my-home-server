@@ -22,16 +22,16 @@ services:
       # Define home-assistant handler http host.
       - "traefik.http.routers.home-assistant-http.rule=Host(`home.${DOCKER_BASE_URL}`)"
       # Define http middleware and redirection to https.
-      - "traefik.http.routers.home-assistant-http.middlewares=home-assistant-https"
+      # - "traefik.http.routers.home-assistant-http.middlewares=home-assistant-https"
       - "traefik.http.middlewares.home-assistant-https.redirectscheme.scheme=https"
       # Enable home-assistant handler entrypoint on https.
       - "traefik.http.routers.home-assistant.entrypoints=websecure"
       # Define home-assistant handler host.
-      - "traefik.http.routers._home-assistant.rule=Host(`home.${DOCKER_BASE_URL}`)"
+      - "traefik.http.routers.home-assistant.rule=Host(`home.${DOCKER_BASE_URL}`)"
       # Instructs home-assistant that the current router is dedicated to HTTPS requests only.
-      - "traefik.http.routers._home-assistant.tls=true"
+      - "traefik.http.routers.home-assistant.tls=true"
       # Define on which network Traefik is operating.
-      # - "traefik.docker.network=docker-home-net"
+      - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
   # nodered:
   #   container_name: nodered

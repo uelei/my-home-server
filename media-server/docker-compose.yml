@@ -9,6 +9,7 @@ services:
       - PUID=${UID}
       - PGID=13000
       - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - ${USERHOME}/server/plex-config:/config
       - ${USERHOME}/storage:/storage
@@ -43,7 +44,7 @@ services:
       # Define on which network Traefik is operating.
       - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.plex.loadbalancer.server.port=32400"
-#
+
   # tautulli:
   #   image: lscr.io/linuxserver/tautulli:latest
   #   container_name: tautulli
@@ -209,8 +210,8 @@ services:
     # ports:
     #   - 8686:8686
     restart: unless-stopped
-    # networks:
-    #   - docker-home-net
+    networks:
+      - docker-home-net
     labels:
       # Enable lidarr handler entrypoint on http.
       - "traefik.http.routers.lidarr-http.entrypoints=web"
@@ -229,7 +230,7 @@ services:
       # - "traefik.docker.network=docker-home-net"
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
-  # readarr:
+  # readarr: # books
   #   image: lscr.io/linuxserver/readarr:develop
   #   container_name: readarr
   #   environment:
@@ -244,19 +245,19 @@ services:
   #     - 8787:8787
   #   restart: unless-stopped
 
-  # # mylar3: commic book
-  # #  image: lscr.io/linuxserver/mylar3:latest
-  # #  container_name: mylar3
-  # #  environment:
-  # #    - PUID=13005
-  # #    - PGID=13000
-  # #    - UMASK=002
-  # #  volumes:
-  # #    - ./docker/mylar-config:/config
-  # #    - ./data:/data
-  # #  ports:
-  # #    - 8090:8090
-  # #  restart: unless-stopped
+  # mylar3: # commic book
+  #  image: lscr.io/linuxserver/mylar3:latest
+  #  container_name: mylar3
+  #  environment:
+  #    - PUID=13005
+  #    - PGID=13000
+  #    - UMASK=002
+  #  volumes:
+  #    - ./docker/mylar-config:/config
+  #    - ./data:/data
+  #  ports:
+  #    - 8090:8090
+  #  restart: unless-stopped
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -341,6 +342,9 @@ services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
+    network_mode: host
+    # networks:
+    #   - docker-home-net
     environment:
       - PUID=1000
       - PGID=1000
@@ -350,33 +354,33 @@ services:
     volumes:
       - ${USERHOME}/server/qbittorrent-config:/config
       - ${USERHOME}/storage:/storage
-    ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+    # ports:
+    #   - 8080:8080
+    #   - 6881:6881
+    #   - 6881:6881/udp
     restart: unless-stopped
     labels:
        - "traefik.enable=false"
-  # # transmission-openvpn:
-  # #     cap_add:
-  # #         - NET_ADMIN
-  # #     volumes:
-  # #         - '.docker/transmission-openvpn-config:/config' # Change this to your docker config folder
-  # #         - '/data/torrents:/data'
-  # #         - './trans-tor.ovpn:/etc/openvpn/custom/default.ovpn'
-  # #
-  # #     environment:
-  # #         - OPENVPN_PROVIDER=custom
-  # #         - OPENVPN_USERNAME=uelei  
-  # #         - OPENVPN_PASSWORD=pass
-  # #         - LOCAL_NETWORK=192.168.1.0/16
-  # #     logging:
-  # #         driver: json-file
-  # #         options:
-  # #             max-size: 10m
-  # #     ports:
-  # #         - '9091:9091'
-  # #     image: haugene/transmission-openvpn
+  # transmission-openvpn:
+  #     cap_add:
+  #         - NET_ADMIN
+  #     volumes:
+  #         - '.docker/transmission-openvpn-config:/config' # Change this to your docker config folder
+  #         - '/data/torrents:/data'
+  #         - './trans-tor.ovpn:/etc/openvpn/custom/default.ovpn'
+  #
+  #     environment:
+  #         - OPENVPN_PROVIDER=custom
+  #         - OPENVPN_USERNAME=uelei  
+  #         - OPENVPN_PASSWORD=pass
+  #         - LOCAL_NETWORK=192.168.1.0/16
+  #     logging:
+  #         driver: json-file
+  #         options:
+  #             max-size: 10m
+  #     ports:
+  #         - '9091:9091'
+  #     image: haugene/transmission-openvpn
 
 networks:
   docker-home-net:

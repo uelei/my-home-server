@@ -29,6 +29,7 @@ services:
       - ${USERHOME}/server/traefik/traefik.config.toml:/root/.config/ssl.toml
       # Mount the folder containing the certificates for https.
       - certs:/certs/
+    restart: unless-stopped
     labels:
       - "traefik.enable=true"
       # Enable Traefik API handler entrypoint on http.
@@ -44,7 +45,7 @@ services:
       # Define a load balancer to route the entry point to [8080].
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       # Define Traefik API handler host.
-      - "traefik.http.routers.traefik.rule=Host(`${DOCKER_BASE_URL}`)"
+      - "traefik.http.routers.traefik.rule=Host(`router.${DOCKER_BASE_URL}`)"
       # Instructs Traefik that the current router is dedicated to HTTPS requests only.
       - "traefik.http.routers.traefik.tls=true"
     extra_hosts:
